@@ -1,0 +1,921 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-900 text-slate-100">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Baker's Percentage & Hydration Calculator</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            amber: {
+              50: '#fffbeb',
+              100: '#fef3c7',
+              400: '#fbbf24',
+              500: '#f59e0b',
+              600: '#d97706',
+              700: '#b45309',
+              800: '#92400e',
+              900: '#78350f',
+            },
+            sienna: {
+              500: '#c86d3b',
+              600: '#b05928',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Inter Font -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+    }
+    .serif-title {
+      font-family: 'Playfair Display', serif;
+    }
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      height: 20px;
+      width: 20px;
+      border-radius: 50%;
+      background: #f59e0b;
+      cursor: pointer;
+      box-shadow: 0 0 10px rgba(245, 158, 11, 0.5);
+    }
+    @media print {
+      .no-print {
+        display: none !important;
+      }
+      body {
+        background-color: white !important;
+        color: black !important;
+      }
+      .print-card {
+        border: 1px solid #ccc !important;
+        box-shadow: none !important;
+        background: white !important;
+        color: black !important;
+      }
+    }
+  </style>
+</head>
+<body class="min-h-full flex flex-col justify-between selection:bg-amber-500 selection:text-slate-950">
+
+  <!-- Top Navigation Bar -->
+  <header class="border-b border-slate-800 bg-slate-950/80 backdrop-blur sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex flex-wrap items-center justify-between gap-4">
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-600 to-amber-400 flex items-center justify-center text-slate-950 font-bold text-xl shadow-lg shadow-amber-500/20">
+          <i class="fa-solid fa-wheat-awn"></i>
+        </div>
+        <div>
+          <h1 class="text-xl font-bold tracking-tight text-white flex items-center gap-2">
+            Baker's Percentage <span class="text-xs bg-amber-500/10 text-amber-400 px-2 py-0.5 rounded-full border border-amber-500/20 font-medium">Pro</span>
+          </h1>
+          <p class="text-xs text-slate-400">Hydration & Sourdough Recipe Calculator</p>
+        </div>
+      </div>
+
+      <!-- Action Tools Header -->
+      <div class="flex items-center gap-2 no-print">
+        <button onclick="copyRecipeToClipboard()" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-medium text-slate-200 transition flex items-center gap-1.5 border border-slate-700">
+          <i class="fa-regular fa-copy text-amber-400"></i> Copy Text
+        </button>
+        <button onclick="window.print()" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-medium text-slate-200 transition flex items-center gap-1.5 border border-slate-700">
+          <i class="fa-solid fa-print text-amber-400"></i> Print
+        </button>
+        <button onclick="openSaveModal()" class="px-3.5 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-semibold transition flex items-center gap-1.5 shadow-md shadow-amber-500/20">
+          <i class="fa-solid fa-bookmark"></i> Save Recipe
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 w-full flex-1 grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+    <!-- LEFT COLUMN: INPUT CONTROLS & RECIPE SETTINGS -->
+    <div class="lg:col-span-7 space-y-6">
+
+      <!-- Mode Selection Tab -->
+      <div class="bg-slate-800/50 p-1.5 rounded-xl border border-slate-700/80 flex gap-2 no-print">
+        <button id="mode-flour-btn" onclick="setCalcMode('flour')" class="flex-1 py-2 px-3 rounded-lg text-xs font-semibold transition flex items-center justify-center gap-2 bg-amber-500 text-slate-950 shadow-md">
+          <i class="fa-solid fa-cubes-stacked"></i> Calculate from Flour Weight
+        </button>
+        <button id="mode-dough-btn" onclick="setCalcMode('dough')" class="flex-1 py-2 px-3 rounded-lg text-xs font-semibold transition flex items-center justify-center gap-2 text-slate-400 hover:text-slate-200">
+          <i class="fa-solid fa-weight-scale"></i> Calculate from Target Total Dough
+        </button>
+      </div>
+
+      <!-- Primary Input Card -->
+      <div class="bg-slate-800/40 border border-slate-700/60 rounded-2xl p-5 shadow-xl space-y-5 print-card">
+        <div class="flex items-center justify-between border-b border-slate-700/50 pb-3">
+          <h2 class="text-sm font-bold uppercase tracking-wider text-amber-400 flex items-center gap-2">
+            <i class="fa-solid fa-sliders"></i> Core Flour & Weight Parameters
+          </h2>
+          <span class="text-xs text-slate-400 italic">Flour is always = 100%</span>
+        </div>
+
+        <!-- Mode A Input: Main Flour Weight -->
+        <div id="flour-mode-input-container" class="space-y-2">
+          <div class="flex justify-between items-center">
+            <label for="main-flour-input" class="text-sm font-medium text-slate-200">
+              Main Flour Weight (Grams)
+            </label>
+            <span class="text-xs font-mono bg-slate-900 px-2 py-1 rounded text-amber-400 border border-slate-700">
+              100% Base
+            </span>
+          </div>
+          <div class="relative">
+            <input type="number" id="main-flour-input" value="1000" min="50" max="50000" step="10" oninput="calculateAll()" class="w-full bg-slate-900 border border-slate-700 rounded-xl py-2.5 px-4 text-slate-100 font-semibold text-lg focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500">
+            <span class="absolute right-4 top-3 text-slate-400 font-medium text-sm">grams</span>
+          </div>
+        </div>
+
+        <!-- Mode B Input: Target Total Dough Weight -->
+        <div id="dough-mode-input-container" class="space-y-2 hidden">
+          <div class="flex justify-between items-center">
+            <label for="target-dough-input" class="text-sm font-medium text-slate-200">
+              Target Total Dough Weight (Grams)
+            </label>
+            <span class="text-xs font-mono bg-amber-500/10 text-amber-300 px-2 py-1 rounded border border-amber-500/20">
+              Reverse Calculation
+            </span>
+          </div>
+          <div class="relative">
+            <input type="number" id="target-dough-input" value="1800" min="100" max="100000" step="50" oninput="calculateAll()" class="w-full bg-slate-900 border border-slate-700 rounded-xl py-2.5 px-4 text-amber-300 font-semibold text-lg focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500">
+            <span class="absolute right-4 top-3 text-slate-400 font-medium text-sm">grams</span>
+          </div>
+        </div>
+
+        <!-- Multi-Flour Blend Collapsible Accordion -->
+        <div class="border border-slate-700/60 rounded-xl bg-slate-900/60 p-3.5 space-y-3">
+          <div class="flex items-center justify-between cursor-pointer" onclick="toggleFlourBlend()">
+            <div class="flex items-center gap-2">
+              <i class="fa-solid fa-wheat-field text-amber-500"></i>
+              <span class="text-xs font-bold text-slate-200">Flour Blend & Varieties (Optional)</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <span id="flour-blend-status" class="text-xs text-amber-400 font-mono">100% Bread Flour</span>
+              <i id="flour-blend-chevron" class="fa-solid fa-chevron-down text-slate-400 text-xs transition-transform duration-200"></i>
+            </div>
+          </div>
+
+          <div id="flour-blend-content" class="hidden pt-2 border-t border-slate-800 space-y-3">
+            <p class="text-xs text-slate-400">
+              Enter percentages for different flour varieties. Ensure total equals 100%.
+            </p>
+            
+            <div class="space-y-2.5 text-xs">
+              <div class="flex items-center justify-between gap-3">
+                <span class="w-32 font-medium text-slate-300">Bread Flour</span>
+                <input type="number" id="flour-type-1-pct" value="100" min="0" max="100" oninput="updateFlourBlend()" class="w-20 bg-slate-800 border border-slate-700 rounded px-2 py-1 text-center text-amber-300 font-mono">
+                <span class="w-20 text-right font-mono text-slate-400" id="flour-type-1-grams">1000g</span>
+              </div>
+              <div class="flex items-center justify-between gap-3">
+                <span class="w-32 font-medium text-slate-300">Whole Wheat Flour</span>
+                <input type="number" id="flour-type-2-pct" value="0" min="0" max="100" oninput="updateFlourBlend()" class="w-20 bg-slate-800 border border-slate-700 rounded px-2 py-1 text-center text-amber-300 font-mono">
+                <span class="w-20 text-right font-mono text-slate-400" id="flour-type-2-grams">0g</span>
+              </div>
+              <div class="flex items-center justify-between gap-3">
+                <span class="w-32 font-medium text-slate-300">Rye / Ancient Grain</span>
+                <input type="number" id="flour-type-3-pct" value="0" min="0" max="100" oninput="updateFlourBlend()" class="w-20 bg-slate-800 border border-slate-700 rounded px-2 py-1 text-center text-amber-300 font-mono">
+                <span class="w-20 text-right font-mono text-slate-400" id="flour-type-3-grams">0g</span>
+              </div>
+              <div class="flex justify-between items-center pt-1 border-t border-slate-800 text-xs">
+                <span class="font-bold text-slate-400">Total Blend Percentage:</span>
+                <span id="flour-blend-total-pct" class="font-bold font-mono text-emerald-400">100%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Hydration Slider & Input -->
+        <div class="space-y-2">
+          <div class="flex justify-between items-center">
+            <label for="hydration-input" class="text-sm font-medium text-slate-200 flex items-center gap-1.5">
+              <i class="fa-solid fa-droplet text-blue-400"></i> Target Water (Added Hydration %)
+            </label>
+            <div class="flex items-center gap-1">
+              <input type="number" id="hydration-input" value="75" min="40" max="110" step="0.5" oninput="syncHydrationSlider(); calculateAll()" class="w-16 bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-right text-amber-400 font-bold font-mono text-sm">
+              <span class="text-xs font-semibold text-slate-400">%</span>
+            </div>
+          </div>
+          <input type="range" id="hydration-slider" min="45" max="95" step="0.5" value="75" oninput="syncHydrationInput(); calculateAll()" class="w-full h-2 bg-slate-900 rounded-lg appearance-none cursor-pointer">
+          <div class="flex justify-between text-[11px] text-slate-500 font-mono">
+            <span>Stiff (50%)</span>
+            <span>Standard (70%)</span>
+            <span>High (80%)</span>
+            <span>Very High (90%+)</span>
+          </div>
+        </div>
+
+        <!-- Sourdough Starter Section -->
+        <div class="p-4 bg-slate-900/80 border border-amber-500/20 rounded-xl space-y-3">
+          <div class="flex items-center justify-between">
+            <label class="text-xs font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
+              <i class="fa-solid fa-flask text-amber-400"></i> Sourdough Starter (Levain)
+            </label>
+            <span class="text-[11px] text-slate-400">Flour based %</span>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label for="starter-pct-input" class="text-xs text-slate-300 block mb-1">Starter Ratio (%)</label>
+              <div class="relative">
+                <input type="number" id="starter-pct-input" value="20" min="0" max="50" step="0.5" oninput="calculateAll()" class="w-full bg-slate-800 border border-slate-700 rounded-lg py-1.5 px-3 text-slate-100 font-semibold text-sm">
+                <span class="absolute right-3 top-2 text-xs text-slate-400">%</span>
+              </div>
+            </div>
+            <div>
+              <label for="starter-hydration-input" class="text-xs text-slate-300 block mb-1">Starter Hydration (%)</label>
+              <div class="relative">
+                <input type="number" id="starter-hydration-input" value="100" min="50" max="200" step="5" oninput="calculateAll()" class="w-full bg-slate-800 border border-slate-700 rounded-lg py-1.5 px-3 text-slate-100 font-semibold text-sm">
+                <span class="absolute right-3 top-2 text-xs text-slate-400">%</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="text-[11px] text-slate-400 bg-slate-800/60 p-2 rounded border border-slate-700/50 flex items-center justify-between">
+            <span>Starter Breakdown:</span>
+            <span id="starter-breakdown-label" class="font-mono text-amber-300">100g Flour + 100g Water</span>
+          </div>
+        </div>
+
+        <!-- Salt & Commercial Yeast -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <!-- Salt -->
+          <div class="space-y-1.5">
+            <label for="salt-pct-input" class="text-xs font-semibold text-slate-300 flex items-center gap-1">
+              <i class="fa-solid fa-cube text-slate-400"></i> Salt Ratio (%)
+            </label>
+            <div class="relative">
+              <input type="number" id="salt-pct-input" value="2.0" min="0" max="5" step="0.1" oninput="calculateAll()" class="w-full bg-slate-900 border border-slate-700 rounded-xl py-2 px-3 text-slate-100 font-semibold text-sm">
+              <span class="absolute right-3 top-2.5 text-xs text-slate-400">%</span>
+            </div>
+            <p class="text-[11px] text-slate-500">Standard bread: 1.8% - 2.2%</p>
+          </div>
+
+          <!-- Commercial Yeast -->
+          <div class="space-y-1.5">
+            <label for="yeast-pct-input" class="text-xs font-semibold text-slate-300 flex items-center gap-1">
+              <i class="fa-solid fa-bacteria text-amber-400"></i> Commercial Yeast (%)
+            </label>
+            <div class="relative">
+              <input type="number" id="yeast-pct-input" value="0.0" min="0" max="5" step="0.1" oninput="calculateAll()" class="w-full bg-slate-900 border border-slate-700 rounded-xl py-2 px-3 text-slate-100 font-semibold text-sm">
+              <span class="absolute right-3 top-2.5 text-xs text-slate-400">%</span>
+            </div>
+            <div class="flex justify-between items-center text-[11px] text-slate-500">
+              <span>Type:</span>
+              <select id="yeast-type-select" onchange="calculateAll()" class="bg-transparent text-amber-400 font-semibold text-xs border-none focus:outline-none cursor-pointer">
+                <option value="instant" class="bg-slate-900 text-slate-200">Instant (Dry)</option>
+                <option value="fresh" class="bg-slate-900 text-slate-200">Fresh Yeast (x3)</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Extra Inclusions Collapsible -->
+        <div class="border border-slate-700/60 rounded-xl bg-slate-900/40 p-3 space-y-2">
+          <div class="flex items-center justify-between cursor-pointer" onclick="toggleExtraAdditions()">
+            <span class="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
+              <i class="fa-solid fa-bottle-droplet text-amber-400"></i> Extra Inclusions (Custom Fats, Sugars, Seeds, Add-ins)
+            </span>
+            <i id="extra-chevron" class="fa-solid fa-chevron-down text-slate-400 text-xs"></i>
+          </div>
+
+          <div id="extra-additions-content" class="hidden pt-2 border-t border-slate-800 space-y-3 text-xs">
+            <div id="extra-inclusions-list" class="space-y-2">
+              <!-- Dynamically populated inclusion rows -->
+            </div>
+
+            <button onclick="addExtraInclusion()" class="w-full py-2 bg-slate-800 hover:bg-slate-700 text-amber-400 font-semibold rounded-lg text-xs flex items-center justify-center gap-1.5 border border-slate-700 transition">
+              <i class="fa-solid fa-plus text-xs"></i> Add Custom Inclusion
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- RIGHT COLUMN: RESULTS, TRUE HYDRATION & BREAKDOWN -->
+    <div class="lg:col-span-5 space-y-6">
+
+      <!-- Top Overview Dashboard Cards -->
+      <div class="grid grid-cols-2 gap-3">
+        <!-- True Total Hydration Card -->
+        <div class="bg-slate-800/60 border border-blue-500/30 rounded-2xl p-4 shadow-xl relative overflow-hidden print-card">
+          <div class="absolute -right-4 -bottom-4 text-blue-500/10 text-6xl font-bold">
+            <i class="fa-solid fa-droplet"></i>
+          </div>
+          <span class="text-[11px] font-bold text-blue-400 uppercase tracking-wider block mb-1">
+            True Total Hydration
+          </span>
+          <div class="flex items-baseline gap-1">
+            <span id="true-hydration-val" class="text-3xl font-extrabold text-blue-300 font-mono">75.0</span>
+            <span class="text-lg font-bold text-blue-400">%</span>
+          </div>
+          <p class="text-[11px] text-slate-400 mt-1.5 leading-tight" id="hydration-explain-text">
+            Net ratio including flour & water from levain.
+          </p>
+        </div>
+
+        <!-- Total Dough Weight Card -->
+        <div class="bg-slate-800/60 border border-amber-500/30 rounded-2xl p-4 shadow-xl relative overflow-hidden print-card">
+          <div class="absolute -right-4 -bottom-4 text-amber-500/10 text-6xl font-bold">
+            <i class="fa-solid fa-scale-balanced"></i>
+          </div>
+          <span class="text-[11px] font-bold text-amber-400 uppercase tracking-wider block mb-1">
+            Total Dough Weight
+          </span>
+          <div class="flex items-baseline gap-1">
+            <span id="total-dough-val" class="text-3xl font-extrabold text-amber-300 font-mono">1970</span>
+            <span class="text-sm font-bold text-amber-400">g</span>
+          </div>
+          <p class="text-[11px] text-slate-400 mt-1.5 leading-tight" id="dough-yield-text">
+            Net weight of total dough batch
+          </p>
+        </div>
+      </div>
+
+      <!-- Detailed Ingredient Breakdown Table Card -->
+      <div class="bg-slate-800/40 border border-slate-700/60 rounded-2xl p-5 shadow-xl space-y-4 print-card">
+        <div class="flex items-center justify-between border-b border-slate-700/50 pb-3">
+          <h2 class="text-sm font-bold uppercase tracking-wider text-slate-200 flex items-center gap-2">
+            <i class="fa-solid fa-list-check text-amber-400"></i> Ingredient Weight Breakdown
+          </h2>
+          <span class="text-xs text-slate-400">Baker's Formula</span>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs border-collapse">
+            <thead>
+              <tr class="border-b border-slate-700 text-slate-400 font-semibold uppercase">
+                <th class="py-2 px-1">Ingredient</th>
+                <th class="py-2 px-1 text-center">Baker's %</th>
+                <th class="py-2 px-1 text-right">Net Weight</th>
+              </tr>
+            </thead>
+            <tbody id="recipe-table-body" class="divide-y divide-slate-800 font-mono">
+              <!-- Dynamically populated rows -->
+            </tbody>
+          </table>
+        </div>
+
+        <!-- True Breakdown Flour & Water Summary Box -->
+        <div class="bg-slate-900/90 border border-slate-700/80 rounded-xl p-3.5 space-y-2 text-xs">
+          <div class="flex justify-between items-center font-semibold text-slate-300">
+            <span class="flex items-center gap-1.5"><i class="fa-solid fa-wheat-awn text-amber-500"></i> Total Flour (Main + Starter):</span>
+            <span id="total-flour-combined" class="font-mono text-amber-300 font-bold">1100 g</span>
+          </div>
+          <div class="flex justify-between items-center font-semibold text-slate-300">
+            <span class="flex items-center gap-1.5"><i class="fa-solid fa-faucet-drip text-blue-400"></i> Total Water (Added + Starter):</span>
+            <span id="total-water-combined" class="font-mono text-blue-300 font-bold">850 g</span>
+          </div>
+          <div class="pt-2 border-t border-slate-800 flex justify-between items-center text-slate-400 text-[11px]">
+            <span>Dough Yield %:</span>
+            <span id="dough-yield-pct" class="font-mono text-slate-200">197%</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Visual Composition Donut Chart Widget -->
+      <div class="bg-slate-800/40 border border-slate-700/60 rounded-2xl p-4 shadow-xl flex items-center justify-around no-print">
+        <div class="relative w-32 h-32 flex items-center justify-center">
+          <svg id="donut-svg" viewBox="0 0 36 36" class="w-full h-full transform -rotate-90 drop-shadow">
+            <!-- Dynamic SVG Paths generated via JavaScript -->
+          </svg>
+          <div class="absolute text-center">
+            <span class="block text-[10px] text-slate-400">Water/Flour</span>
+            <span id="donut-center-pct" class="text-xs font-bold text-amber-400 font-mono">75%</span>
+          </div>
+        </div>
+
+        <div class="space-y-1.5 text-xs">
+          <div class="flex items-center gap-2">
+            <span class="w-3 h-3 rounded-full bg-amber-500"></span>
+            <span class="text-slate-300">Main Flour</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="w-3 h-3 rounded-full bg-blue-500"></span>
+            <span class="text-slate-300">Added Water</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="w-3 h-3 rounded-full bg-emerald-500"></span>
+            <span class="text-slate-300">Starter</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="w-3 h-3 rounded-full bg-purple-400"></span>
+            <span class="text-slate-300">Salt / Extras</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- Save Recipe Modal -->
+  <div id="save-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl">
+      <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+        <h3 class="text-base font-bold text-white flex items-center gap-2">
+          <i class="fa-solid fa-bookmark text-amber-400"></i> Save Recipe
+        </h3>
+        <button onclick="closeSaveModal()" class="text-slate-400 hover:text-white">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+
+      <div class="space-y-3">
+        <div>
+          <label for="recipe-name-input" class="text-xs text-slate-300 block mb-1">Recipe Name</label>
+          <input type="text" id="recipe-name-input" placeholder="e.g., Artisanal Sourdough 78%" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-2.5 text-sm text-slate-100 focus:outline-none focus:border-amber-500">
+        </div>
+        <div>
+          <label for="recipe-notes-input" class="text-xs text-slate-300 block mb-1">Notes (Optional)</label>
+          <textarea id="recipe-notes-input" placeholder="Baking temperature, oven stone notes..." class="w-full bg-slate-800 border border-slate-700 rounded-xl p-2.5 text-xs text-slate-100 h-20 focus:outline-none focus:border-amber-500"></textarea>
+        </div>
+      </div>
+
+      <div class="flex justify-end gap-2 pt-2">
+        <button onclick="closeSaveModal()" class="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 text-xs font-semibold hover:bg-slate-700">Cancel</button>
+        <button onclick="saveCurrentRecipe()" class="px-4 py-2 rounded-xl bg-amber-500 text-slate-950 text-xs font-semibold hover:bg-amber-600">Save</button>
+      </div>
+
+      <!-- Saved List inside modal -->
+      <div class="pt-3 border-t border-slate-800 space-y-2">
+        <span class="text-xs font-bold text-slate-400 block">Your Saved Recipes:</span>
+        <div id="saved-recipes-list" class="space-y-1.5 max-h-40 overflow-y-auto text-xs">
+          <!-- Dynamically populated saved recipes -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="border-t border-slate-800/80 py-4 text-center text-xs text-slate-500 no-print">
+    <p>Baker's Percentage & Hydration Calculator • Designed for Professional & Home Bakers</p>
+  </footer>
+
+  <script>
+    // App State Management
+    let calcMode = 'flour'; // 'flour' or 'dough'
+    let currentCalculatedData = {};
+
+    // Dynamic Extra Inclusions State
+    let extraInclusions = [
+      { id: 1, name: 'Olive Oil / Fat', pct: 0 },
+      { id: 2, name: 'Sugar / Honey', pct: 0 },
+      { id: 3, name: 'Seeds / Nuts', pct: 0 }
+    ];
+
+    function renderExtraInclusionsInputs() {
+      const container = document.getElementById('extra-inclusions-list');
+      if (!container) return;
+
+      if (extraInclusions.length === 0) {
+        container.innerHTML = `<p class="text-slate-500 italic text-[11px]">No custom inclusions added yet. Click below to add.</p>`;
+        return;
+      }
+
+      container.innerHTML = extraInclusions.map(inc => `
+        <div class="flex items-center gap-2 bg-slate-900/80 p-2 rounded-lg border border-slate-700/60">
+          <input type="text" value="${inc.name}" oninput="updateInclusionName(${inc.id}, this.value)" placeholder="Ingredient Name" class="flex-1 bg-slate-800 border border-slate-700 rounded px-2 py-1 text-xs text-slate-100 font-medium focus:outline-none focus:border-amber-500">
+          <div class="relative w-24">
+            <input type="number" value="${inc.pct}" min="0" max="100" step="0.1" oninput="updateInclusionPct(${inc.id}, this.value)" class="w-full bg-slate-800 border border-slate-700 rounded px-2 py-1 pr-5 text-right font-mono text-xs text-amber-300 font-bold focus:outline-none focus:border-amber-500">
+            <span class="absolute right-2 top-1.5 text-[10px] text-slate-400">%</span>
+          </div>
+          <button onclick="removeExtraInclusion(${inc.id})" title="Remove Ingredient" class="p-1.5 bg-rose-500/20 text-rose-300 hover:bg-rose-500 hover:text-white rounded transition">
+            <i class="fa-solid fa-trash text-xs"></i>
+          </button>
+        </div>
+      `).join('');
+    }
+
+    function addExtraInclusion() {
+      extraInclusions.push({
+        id: Date.now(),
+        name: 'New Inclusion',
+        pct: 0
+      });
+      renderExtraInclusionsInputs();
+      calculateAll();
+    }
+
+    function updateInclusionName(id, val) {
+      const item = extraInclusions.find(i => i.id === id);
+      if (item) {
+        item.name = val;
+        calculateAll();
+      }
+    }
+
+    function updateInclusionPct(id, val) {
+      const item = extraInclusions.find(i => i.id === id);
+      if (item) {
+        item.pct = parseFloat(val) || 0;
+        calculateAll();
+      }
+    }
+
+    function removeExtraInclusion(id) {
+      extraInclusions = extraInclusions.filter(i => i.id !== id);
+      renderExtraInclusionsInputs();
+      calculateAll();
+    }
+
+    function setCalcMode(mode) {
+      calcMode = mode;
+      const flourBtn = document.getElementById('mode-flour-btn');
+      const doughBtn = document.getElementById('mode-dough-btn');
+      const flourContainer = document.getElementById('flour-mode-input-container');
+      const doughContainer = document.getElementById('dough-mode-input-container');
+
+      if (mode === 'flour') {
+        flourBtn.className = "flex-1 py-2 px-3 rounded-lg text-xs font-semibold transition flex items-center justify-center gap-2 bg-amber-500 text-slate-950 shadow-md";
+        doughBtn.className = "flex-1 py-2 px-3 rounded-lg text-xs font-semibold transition flex items-center justify-center gap-2 text-slate-400 hover:text-slate-200";
+        flourContainer.classList.remove('hidden');
+        doughContainer.classList.add('hidden');
+      } else {
+        doughBtn.className = "flex-1 py-2 px-3 rounded-lg text-xs font-semibold transition flex items-center justify-center gap-2 bg-amber-500 text-slate-950 shadow-md";
+        flourBtn.className = "flex-1 py-2 px-3 rounded-lg text-xs font-semibold transition flex items-center justify-center gap-2 text-slate-400 hover:text-slate-200";
+        doughContainer.classList.remove('hidden');
+        flourContainer.classList.add('hidden');
+      }
+      calculateAll();
+    }
+
+    function syncHydrationSlider() {
+      const val = document.getElementById('hydration-input').value;
+      document.getElementById('hydration-slider').value = val;
+    }
+
+    function syncHydrationInput() {
+      const val = document.getElementById('hydration-slider').value;
+      document.getElementById('hydration-input').value = val;
+    }
+
+    function toggleFlourBlend() {
+      const content = document.getElementById('flour-blend-content');
+      const chevron = document.getElementById('flour-blend-chevron');
+      content.classList.toggle('hidden');
+      chevron.classList.toggle('rotate-180');
+    }
+
+    function toggleExtraAdditions() {
+      const content = document.getElementById('extra-additions-content');
+      const chevron = document.getElementById('extra-chevron');
+      content.classList.toggle('hidden');
+      chevron.classList.toggle('rotate-180');
+    }
+
+    function updateFlourBlend() {
+      let p1 = parseFloat(document.getElementById('flour-type-1-pct').value) || 0;
+      let p2 = parseFloat(document.getElementById('flour-type-2-pct').value) || 0;
+      let p3 = parseFloat(document.getElementById('flour-type-3-pct').value) || 0;
+
+      let totalPct = p1 + p2 + p3;
+      const totalPctSpan = document.getElementById('flour-blend-total-pct');
+      totalPctSpan.innerText = `${totalPct}%`;
+
+      if (Math.abs(totalPct - 100) > 0.1) {
+        totalPctSpan.className = "font-bold font-mono text-rose-400";
+      } else {
+        totalPctSpan.className = "font-bold font-mono text-emerald-400";
+      }
+
+      let mainFlourGrams = currentCalculatedData.mainFlourGrams || 1000;
+      document.getElementById('flour-type-1-grams').innerText = `${Math.round(mainFlourGrams * (p1/100))}g`;
+      document.getElementById('flour-type-2-grams').innerText = `${Math.round(mainFlourGrams * (p2/100))}g`;
+      document.getElementById('flour-type-3-grams').innerText = `${Math.round(mainFlourGrams * (p3/100))}g`;
+
+      let labelText = "100% Bread Flour";
+      if (p2 > 0 || p3 > 0) {
+        labelText = `Bread ${p1}% | Whole Wheat ${p2}% | Rye ${p3}%`;
+      }
+      document.getElementById('flour-blend-status').innerText = labelText;
+    }
+
+    function calculateAll() {
+      // 1. Fetch Inputs
+      let targetHydrationPct = parseFloat(document.getElementById('hydration-input').value) || 0;
+      let starterPct = parseFloat(document.getElementById('starter-pct-input').value) || 0;
+      let starterHydrationPct = parseFloat(document.getElementById('starter-hydration-input').value) || 100;
+      let saltPct = parseFloat(document.getElementById('salt-pct-input').value) || 0;
+      let yeastPct = parseFloat(document.getElementById('yeast-pct-input').value) || 0;
+
+      // Calculate sum of extra inclusions percentages
+      let extraInclusionsPctSum = extraInclusions.reduce((sum, inc) => sum + (parseFloat(inc.pct) || 0), 0);
+
+      let mainFlourGrams = 0;
+
+      // Baker's percentage total sum relative to main flour
+      let totalBakerPctSum = 100 + targetHydrationPct + starterPct + saltPct + yeastPct + extraInclusionsPctSum;
+
+      if (calcMode === 'flour') {
+        mainFlourGrams = parseFloat(document.getElementById('main-flour-input').value) || 0;
+      } else {
+        let targetDoughGrams = parseFloat(document.getElementById('target-dough-input').value) || 0;
+        mainFlourGrams = (targetDoughGrams / totalBakerPctSum) * 100;
+        document.getElementById('main-flour-input').value = Math.round(mainFlourGrams);
+      }
+
+      // Individual component calculations
+      let addedWaterGrams = mainFlourGrams * (targetHydrationPct / 100);
+      let starterTotalGrams = mainFlourGrams * (starterPct / 100);
+
+      // Starter flour & water breakdown
+      let starterFlourGrams = starterTotalGrams / (1 + (starterHydrationPct / 100));
+      let starterWaterGrams = starterTotalGrams - starterFlourGrams;
+
+      let saltGrams = mainFlourGrams * (saltPct / 100);
+      let yeastGrams = mainFlourGrams * (yeastPct / 100);
+
+      // Calculate grams for each extra inclusion
+      let calculatedInclusions = extraInclusions.map(inc => {
+        let pct = parseFloat(inc.pct) || 0;
+        let grams = mainFlourGrams * (pct / 100);
+        return { ...inc, pct, grams };
+      });
+
+      let extraInclusionsGramsSum = calculatedInclusions.reduce((sum, inc) => sum + inc.grams, 0);
+
+      // Combined Total Flour & Water
+      let totalFlourGrams = mainFlourGrams + starterFlourGrams;
+      let totalWaterGrams = addedWaterGrams + starterWaterGrams;
+
+      // True Hydration = (Total Water / Total Flour) * 100
+      let trueHydrationPct = totalFlourGrams > 0 ? (totalWaterGrams / totalFlourGrams) * 100 : 0;
+
+      // Total Dough Weight
+      let totalDoughWeight = mainFlourGrams + addedWaterGrams + starterTotalGrams + saltGrams + yeastGrams + extraInclusionsGramsSum;
+
+      // Save calculated data globally
+      currentCalculatedData = {
+        mainFlourGrams,
+        addedWaterGrams,
+        starterTotalGrams,
+        starterFlourGrams,
+        starterWaterGrams,
+        saltGrams,
+        yeastGrams,
+        calculatedInclusions,
+        extraInclusionsGramsSum,
+        totalFlourGrams,
+        totalWaterGrams,
+        trueHydrationPct,
+        targetHydrationPct,
+        totalDoughWeight,
+        starterPct,
+        saltPct,
+        yeastPct,
+        totalBakerPctSum
+      };
+
+      // Update Starter Breakdown Label
+      document.getElementById('starter-breakdown-label').innerText = 
+        `${Math.round(starterFlourGrams)}g Flour + ${Math.round(starterWaterGrams)}g Water`;
+
+      // Update Top Overview Cards
+      document.getElementById('true-hydration-val').innerText = trueHydrationPct.toFixed(1);
+      document.getElementById('total-dough-val').innerText = Math.round(totalDoughWeight);
+
+      // Render Table
+      renderRecipeTable();
+
+      // Combined flour and water totals summary
+      document.getElementById('total-flour-combined').innerText = `${Math.round(totalFlourGrams)} g`;
+      document.getElementById('total-water-combined').innerText = `${Math.round(totalWaterGrams)} g`;
+      document.getElementById('dough-yield-pct').innerText = `${Math.round(totalBakerPctSum)}%`;
+
+      // Update Donut Chart
+      renderDonutChart();
+
+      // Update flour blend grams if open
+      updateFlourBlend();
+    }
+
+    function renderRecipeTable() {
+      const tbody = document.getElementById('recipe-table-body');
+      tbody.innerHTML = '';
+
+      const items = [
+        { name: 'Main Flour', pct: 100, grams: currentCalculatedData.mainFlourGrams, icon: 'fa-wheat-awn text-amber-500' },
+        { name: 'Added Water', pct: currentCalculatedData.targetHydrationPct, grams: currentCalculatedData.addedWaterGrams, icon: 'fa-droplet text-blue-400' },
+        { name: 'Sourdough Starter (Levain)', pct: currentCalculatedData.starterPct, grams: currentCalculatedData.starterTotalGrams, icon: 'fa-flask text-amber-400', sub: `(${Math.round(currentCalculatedData.starterFlourGrams)}g flour / ${Math.round(currentCalculatedData.starterWaterGrams)}g water)` },
+        { name: 'Salt', pct: currentCalculatedData.saltPct, grams: currentCalculatedData.saltGrams, icon: 'fa-cube text-slate-400' }
+      ];
+
+      if (currentCalculatedData.yeastGrams > 0) {
+        const yeastType = document.getElementById('yeast-type-select').value === 'fresh' ? 'Fresh Yeast' : 'Instant Yeast';
+        items.push({ name: `Commercial Yeast (${yeastType})`, pct: currentCalculatedData.yeastPct, grams: currentCalculatedData.yeastGrams, icon: 'fa-bacteria text-amber-400' });
+      }
+
+      // Add extra custom inclusions dynamically to the breakdown table
+      if (currentCalculatedData.calculatedInclusions && currentCalculatedData.calculatedInclusions.length > 0) {
+        currentCalculatedData.calculatedInclusions.forEach(inc => {
+          if (inc.pct > 0) {
+            items.push({
+              name: inc.name || 'Custom Inclusion',
+              pct: inc.pct,
+              grams: inc.grams,
+              icon: 'fa-jar text-amber-300'
+            });
+          }
+        });
+      }
+
+      items.forEach(item => {
+        const tr = document.createElement('tr');
+        tr.className = "hover:bg-slate-800/40 transition";
+        tr.innerHTML = `
+          <td class="py-2 px-1 text-slate-200 font-medium flex flex-col">
+            <span class="flex items-center gap-1.5"><i class="fa-solid ${item.icon}"></i> ${item.name}</span>
+            ${item.sub ? `<span class="text-[10px] text-slate-500 font-sans pl-5">${item.sub}</span>` : ''}
+          </td>
+          <td class="py-2 px-1 text-center font-bold text-amber-400">${item.pct.toFixed(1)}%</td>
+          <td class="py-2 px-1 text-right font-bold text-slate-100 text-sm">${Math.round(item.grams)} g</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function renderDonutChart() {
+      const svg = document.getElementById('donut-svg');
+      const d = currentCalculatedData;
+      if (!d.totalDoughWeight) return;
+
+      const mainFlourPct = (d.mainFlourGrams / d.totalDoughWeight) * 100;
+      const waterPct = (d.addedWaterGrams / d.totalDoughWeight) * 100;
+      const starterPct = (d.starterTotalGrams / d.totalDoughWeight) * 100;
+      const otherPct = 100 - (mainFlourPct + waterPct + starterPct);
+
+      document.getElementById('donut-center-pct').innerText = `${d.trueHydrationPct.toFixed(0)}%`;
+
+      // Construct SVG Stroke Slices
+      let cumPct = 0;
+      const slices = [
+        { pct: mainFlourPct, color: '#f59e0b' },  // Amber
+        { pct: waterPct, color: '#3b82f6' },      // Blue
+        { pct: starterPct, color: '#10b981' },    // Emerald
+        { pct: otherPct, color: '#c084fc' }       // Purple
+      ];
+
+      let svgHtml = '';
+      slices.forEach(s => {
+        if (s.pct <= 0) return;
+        const strokeDashArray = `${s.pct} ${100 - s.pct}`;
+        const strokeDashOffset = -cumPct;
+        svgHtml += `<circle cx="18" cy="18" r="15.915" fill="transparent" stroke="${s.color}" stroke-width="3.5" stroke-dasharray="${strokeDashArray}" stroke-dashoffset="${strokeDashOffset}"></circle>`;
+        cumPct += s.pct;
+      });
+
+      svg.innerHTML = svgHtml;
+    }
+
+    function openSaveModal() {
+      document.getElementById('save-modal').classList.remove('hidden');
+      renderSavedRecipesList();
+    }
+
+    function closeSaveModal() {
+      document.getElementById('save-modal').classList.add('hidden');
+    }
+
+    function saveCurrentRecipe() {
+      const name = document.getElementById('recipe-name-input').value.trim() || 'Untitled Recipe';
+      const notes = document.getElementById('recipe-notes-input').value.trim();
+
+      const savedItem = {
+        id: Date.now(),
+        name,
+        notes,
+        date: new Date().toLocaleDateString('en-US'),
+        flour: document.getElementById('main-flour-input').value,
+        hydration: document.getElementById('hydration-input').value,
+        starterPct: document.getElementById('starter-pct-input').value,
+        starterHydration: document.getElementById('starter-hydration-input').value,
+        saltPct: document.getElementById('salt-pct-input').value,
+        yeastPct: document.getElementById('yeast-pct-input').value,
+        extraInclusions: extraInclusions.map(i => ({ name: i.name, pct: i.pct }))
+      };
+
+      let existing = JSON.parse(localStorage.getItem('baker_recipes') || '[]');
+      existing.push(savedItem);
+      localStorage.setItem('baker_recipes', JSON.stringify(existing));
+
+      document.getElementById('recipe-name-input').value = '';
+      document.getElementById('recipe-notes-input').value = '';
+      renderSavedRecipesList();
+    }
+
+    function renderSavedRecipesList() {
+      const container = document.getElementById('saved-recipes-list');
+      let recipes = JSON.parse(localStorage.getItem('baker_recipes') || '[]');
+
+      if (recipes.length === 0) {
+        container.innerHTML = '<p class="text-slate-500 italic">No saved recipes yet.</p>';
+        return;
+      }
+
+      container.innerHTML = '';
+      recipes.forEach(r => {
+        const item = document.createElement('div');
+        item.className = "bg-slate-800 p-2 rounded-lg border border-slate-700 flex items-center justify-between";
+        item.innerHTML = `
+          <div>
+            <span class="font-bold text-amber-300 block">${r.name}</span>
+            <span class="text-[10px] text-slate-400">Hydration: ${r.hydration}% • Starter: ${r.starterPct}% • ${r.date}</span>
+          </div>
+          <div class="flex items-center gap-1">
+            <button onclick='loadSavedRecipe(${JSON.stringify(r)})' class="px-2 py-1 bg-amber-500/20 text-amber-300 rounded hover:bg-amber-500 hover:text-slate-950 transition text-[10px]">Load</button>
+            <button onclick="deleteSavedRecipe(${r.id})" class="px-2 py-1 bg-rose-500/20 text-rose-300 rounded hover:bg-rose-500 hover:text-white transition text-[10px]"><i class="fa-solid fa-trash"></i></button>
+          </div>
+        `;
+        container.appendChild(item);
+      });
+    }
+
+    function loadSavedRecipe(r) {
+      document.getElementById('main-flour-input').value = r.flour;
+      document.getElementById('hydration-input').value = r.hydration;
+      document.getElementById('hydration-slider').value = r.hydration;
+      document.getElementById('starter-pct-input').value = r.starterPct;
+      document.getElementById('starter-hydration-input').value = r.starterHydration;
+      document.getElementById('salt-pct-input').value = r.saltPct;
+      document.getElementById('yeast-pct-input').value = r.yeastPct || 0;
+
+      if (r.extraInclusions && Array.isArray(r.extraInclusions)) {
+        extraInclusions = r.extraInclusions.map((inc, index) => ({
+          id: Date.now() + index,
+          name: inc.name,
+          pct: parseFloat(inc.pct) || 0
+        }));
+      }
+
+      renderExtraInclusionsInputs();
+      closeSaveModal();
+      calculateAll();
+    }
+
+    function deleteSavedRecipe(id) {
+      let recipes = JSON.parse(localStorage.getItem('baker_recipes') || '[]');
+      recipes = recipes.filter(r => r.id !== id);
+      localStorage.setItem('baker_recipes', JSON.stringify(recipes));
+      renderSavedRecipesList();
+    }
+
+    function copyRecipeToClipboard() {
+      const d = currentCalculatedData;
+      let text = `🍞 BAKER'S RECIPE & HYDRATION ANALYSIS 🍞\n`;
+      text += `------------------------------------\n`;
+      text += `Main Flour: ${Math.round(d.mainFlourGrams)}g (100%)\n`;
+      text += `Added Water: ${Math.round(d.addedWaterGrams)}g (${d.targetHydrationPct}%)\n`;
+      text += `Sourdough Starter: ${Math.round(d.starterTotalGrams)}g (${d.starterPct}%)\n`;
+      text += `  └ Starter Flour: ${Math.round(d.starterFlourGrams)}g\n`;
+      text += `  └ Starter Water: ${Math.round(d.starterWaterGrams)}g\n`;
+      text += `Salt: ${Math.round(d.saltGrams)}g (${d.saltPct}%)\n`;
+      if (d.yeastGrams > 0) text += `Commercial Yeast: ${Math.round(d.yeastGrams)}g (${d.yeastPct}%)\n`;
+      
+      if (d.calculatedInclusions && d.calculatedInclusions.length > 0) {
+        d.calculatedInclusions.forEach(inc => {
+          if (inc.pct > 0) {
+            text += `${inc.name}: ${Math.round(inc.grams)}g (${inc.pct}%)\n`;
+          }
+        });
+      }
+
+      text += `------------------------------------\n`;
+      text += `True Total Flour: ${Math.round(d.totalFlourGrams)}g\n`;
+      text += `True Total Water: ${Math.round(d.totalWaterGrams)}g\n`;
+      text += `TRUE HYDRATION: ${d.trueHydrationPct.toFixed(1)}%\n`;
+      text += `TOTAL DOUGH WEIGHT: ${Math.round(d.totalDoughWeight)}g\n`;
+
+      const dummy = document.createElement("textarea");
+      document.body.appendChild(dummy);
+      dummy.value = text;
+      dummy.select();
+      document.execCommand("copy");
+      document.body.removeChild(dummy);
+
+      alert("Recipe copied to clipboard!");
+    }
+
+    window.onload = function() {
+      renderExtraInclusionsInputs();
+      calculateAll();
+    };
+  </script>
+</body>
+</html>
