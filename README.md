@@ -14,4 +14,4 @@ In baking, ingredients are measured relative to total flour weight (which is alw
 
 ---
 
-# Live Demo:* https://breadpedia.github.io/-Baker-s-Percentage-Calculator/
+### Live Demo: https://breadpedia.github.io/-Baker-s-Percentage-Calculator/
