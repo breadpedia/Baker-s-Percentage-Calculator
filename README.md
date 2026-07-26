@@ -11,4 +11,4 @@ In baking, ingredients are measured relative to total flour weight (which is alw
 * 🌾 **Flour Base:** Automatically sets total flour as 100%.
 * 💧 **Hydration Level:** Calculates exact water weight based on desired percentage.
 * 🧂 **Ingredients:** Computes salt, yeast, and additional preferment/ingridient baker's percentages instantly.
-* **Live Demo:** [https://your-username.github.io/bakers-percentage](https://your-username.github.io/bakers-percentage)
+* **Live Demo:**  https://breadpedia.github.io/-Baker-s-Percentage-Calculator/
